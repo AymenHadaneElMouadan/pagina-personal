@@ -1,0 +1,21 @@
+export const PERFIL = {
+  nombre: "Aymen Hadane El Mouadan",
+  titulo: "Estudiante de DAW",
+  tituloDocumento: "Aymen Hadane El Mouadan · Página personal",
+  usuarioGithub: "AymenHadaneElMouadan",
+  email: "6314422@alu.murciaeduca.es",
+  minimoProyectos: 3,
+  minimoHabilidades: 6,
+  secciones: ["sobre-mi", "formacion", "habilidades", "contacto"],
+  paleta: {
+    "--color-primario": "#00E5FF",
+    "--color-secundario": "#00FFA8",
+    "--color-fondo": "#1B2CFF",
+    "--color-texto": "#CCCCCC",
+    "--color-acento": "#0B0F2A",
+  },
+  fuenteTitulos: "Georgia",
+  fuenteTexto: "system-ui",
+  puntoRuptura: "768px",
+  modoOscuro: true,
+};

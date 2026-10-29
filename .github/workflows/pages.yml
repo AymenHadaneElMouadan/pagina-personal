@@ -1,0 +1,80 @@
+# Flujo que valida la página y, si corresponde, la publica en GitHub Pages.
+name: "Tests y despliegue en GitHub Pages"
+
+# Cuándo se ejecuta: push a main, pull request hacia main o lanzamiento manual.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Permiso base del flujo: el job de tests solo puede leer el repositorio.
+permissions:
+  contents: read
+
+# Agrupa ejecuciones del mismo flujo y deja terminar la que ya está en curso.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Comprueba el HTML y los tests de Node antes de permitir el despliegue.
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Descarga el código del repositorio en el runner.
+      - name: Obtener el código
+        uses: actions/checkout@v7
+
+      # Instala Node.js 22 y reutiliza la caché de npm a partir del lockfile.
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Instala las dependencias con las versiones exactas de package-lock.json.
+      - name: Instalar dependencias
+        run: npm ci
+
+      # Valida el HTML con html-validate y ejecuta los tests de Node.
+      - name: Ejecutar tests
+        run: npm test
+
+  # Publica el directorio site/ solo fuera de pull requests y únicamente en main.
+  despliegue:
+    needs: tests
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    # Al fijar permisos del job se sustituyen los del flujo: contents permite el
+    # checkout; pages e id-token autorizan el despliegue en GitHub Pages.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # Entorno de Pages. La URL se rellena con la salida del paso de despliegue.
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      # Descarga el repositorio para empaquetar el sitio estático.
+      - name: Obtener el código
+        uses: actions/checkout@v7
+
+      # Prepara el entorno de GitHub Pages del repositorio.
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v6
+
+      # Sube la carpeta site como artefacto que Pages va a publicar.
+      - name: Subir artefacto
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      # Publica el artefacto y deja la URL resultante en steps.despliegue.outputs.page_url.
+      - name: Desplegar en GitHub Pages
+        id: despliegue
+        uses: actions/deploy-pages@v5
